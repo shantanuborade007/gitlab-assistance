@@ -148,6 +148,55 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
+## ☁️ Deploy To Google Cloud Run (Single Dockerfile)
+
+Use the existing root `Dockerfile` to deploy frontend + backend in one Cloud Run service.
+
+### 1. Build and push image with Cloud Build
+
+```bash
+gcloud config set project YOUR_GCP_PROJECT_ID
+gcloud builds submit --tag gcr.io/YOUR_GCP_PROJECT_ID/gitlab-assistant
+```
+
+### 2. Deploy to Cloud Run
+
+```bash
+gcloud run deploy gitlab-assistant \
+  --image gcr.io/YOUR_GCP_PROJECT_ID/gitlab-assistant \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars GOOGLE_API_KEY=YOUR_GOOGLE_API_KEY
+```
+
+Cloud Run injects `PORT` automatically, so you do not need to set it manually.
+
+### Optional: include TLS override from your current backend env
+
+Only include this if you explicitly need it:
+
+```bash
+gcloud run deploy gitlab-assistant \
+  --image gcr.io/YOUR_GCP_PROJECT_ID/gitlab-assistant \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars GOOGLE_API_KEY=YOUR_GOOGLE_API_KEY,NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+
+### 3. Verify deployment
+
+```bash
+gcloud run services describe gitlab-assistant \
+  --region us-central1 \
+  --format='value(status.url)'
+```
+
+Open the returned URL. The React frontend is served from `/`, and backend APIs remain at `/health`, `/progress`, and `/chat`.
+
+---
+
 ## 🐳 Docker
 
 Build and run the entire application in a single container:
@@ -223,4 +272,3 @@ Send a question and receive an AI-generated answer.
 ## 📄 License
 
 MIT
-
