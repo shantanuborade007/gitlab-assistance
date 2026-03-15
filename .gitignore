@@ -38,7 +38,7 @@ Thumbs.db
 *.swo
 
 # Cache
-.cache/
+!.cache/
 .eslintcache
 .parcel-cache/
 
