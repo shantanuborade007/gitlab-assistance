@@ -42,7 +42,6 @@ async function fetchPage(url: string) {
     }
 }
 
-// ── SSE clients ──────────────────────────────────────────
 type SSEClient = {
     id: number;
     res: express.Response;
@@ -84,7 +83,6 @@ async function loadCachedQueryEngine() {
     return index.asQueryEngine({ similarityTopK: 6 });
 }
 
-// ── Crawler ──────────────────────────────────────────────
 async function crawl() {
     const queue = [START_URL];
     const docs: Document[] = [];
@@ -96,7 +94,6 @@ async function crawl() {
 
         console.log(`[crawler] (${visited.size}/${MAX_PAGES}) ${url}`);
 
-        // Broadcast to SSE clients
         broadcast({ type: "crawling", url, count: visited.size, total: MAX_PAGES });
 
         const html = await fetchPage(url);
@@ -122,7 +119,6 @@ async function crawl() {
     return docs;
 }
 
-// ── Express ──────────────────────────────────────────────
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -133,8 +129,6 @@ let ready = false;
 app.get("/health", (_req, res) => {
     res.json({ ready });
 });
-
-// SSE stream endpoint
 app.get("/progress", (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -144,7 +138,6 @@ app.get("/progress", (req, res) => {
     const id = sseClientId++;
     sseClients.push({ id, res });
 
-    // If already ready, immediately tell this client
     if (ready) {
         res.write(`data: ${JSON.stringify({ type: "ready" })}\n\n`);
     } else if (lastProgressEvent) {
@@ -182,7 +175,6 @@ app.post("/chat", async (req, res) => {
 //     res.sendFile(path.join(publicDir, "index.html"));
 // });
 
-// ── Init ─────────────────────────────────────────────────
 async function init() {
     const PORT = process.env.PORT ?? 3001;
 
