@@ -1,4 +1,4 @@
-const BASE = "";
+const BASE = "https://gitlab-assitance-1.onrender.com";
 
 export async function sendMessage(message: string): Promise<string> {
     const res = await fetch(`${BASE}/chat`, {
@@ -35,7 +35,7 @@ export function subscribeToProgress(
     onEvent: (e: ProgressEvent) => void,
     onReady: () => void
 ): () => void {
-    const es = new EventSource("/progress");
+    const es = new EventSource(`${BASE}/progress`);
 
     es.onmessage = (msg) => {
         try {
@@ -46,12 +46,10 @@ export function subscribeToProgress(
                 es.close();
             }
         } catch {
-            // ignore parse errors
         }
     };
 
     es.onerror = () => {
-        // SSE will auto-reconnect — that's fine
     };
 
     return () => es.close();

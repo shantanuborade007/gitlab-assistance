@@ -42,7 +42,6 @@ async function fetchPage(url: string) {
     }
 }
 
-// ── SSE clients ──────────────────────────────────────────
 type SSEClient = {
     id: number;
     res: express.Response;
@@ -84,7 +83,6 @@ async function loadCachedQueryEngine() {
     return index.asQueryEngine({ similarityTopK: 6 });
 }
 
-// ── Crawler ──────────────────────────────────────────────
 async function crawl() {
     const queue = [START_URL];
     const docs: Document[] = [];
@@ -96,7 +94,6 @@ async function crawl() {
 
         console.log(`[crawler] (${visited.size}/${MAX_PAGES}) ${url}`);
 
-        // Broadcast to SSE clients
         broadcast({ type: "crawling", url, count: visited.size, total: MAX_PAGES });
 
         const html = await fetchPage(url);
@@ -122,7 +119,6 @@ async function crawl() {
     return docs;
 }
 
-// ── Express ──────────────────────────────────────────────
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -133,8 +129,6 @@ let ready = false;
 app.get("/health", (_req, res) => {
     res.json({ ready });
 });
-
-// SSE stream endpoint
 app.get("/progress", (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -144,7 +138,6 @@ app.get("/progress", (req, res) => {
     const id = sseClientId++;
     sseClients.push({ id, res });
 
-    // If already ready, immediately tell this client
     if (ready) {
         res.write(`data: ${JSON.stringify({ type: "ready" })}\n\n`);
     } else if (lastProgressEvent) {
@@ -173,16 +166,15 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-// Serve frontend build when running inside the production container.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, "public");
-app.use(express.static(publicDir));
-app.get(/^(?!\/(health|progress|chat)\b).*/, (_req, res) => {
-    res.sendFile(path.join(publicDir, "index.html"));
-});
+// // Serve frontend build when running inside the production container.
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const publicDir = path.join(__dirname, "public");
+// app.use(express.static(publicDir));
+// app.get(/^(?!\/(health|progress|chat)\b).*/, (_req, res) => {
+//     res.sendFile(path.join(publicDir, "index.html"));
+// });
 
-// ── Init ─────────────────────────────────────────────────
 async function init() {
     const PORT = process.env.PORT ?? 3001;
 
@@ -207,8 +199,8 @@ async function init() {
     console.log("[server] Building vector index...");
 
     broadcast({ type: "indexing" });
-    const index = await VectorStoreIndex.fromDocuments(documents);
-    await index.storageContext.persist(CACHE_DIR);
+    const storageContext = await storageContextFromDefaults({ persistDir: CACHE_DIR });
+    const index = await VectorStoreIndex.fromDocuments(documents, { storageContext });
     queryEngine = index.asQueryEngine({ similarityTopK: 6 });
 
     ready = true;
