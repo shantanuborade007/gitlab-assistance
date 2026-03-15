@@ -207,8 +207,8 @@ async function init() {
     console.log("[server] Building vector index...");
 
     broadcast({ type: "indexing" });
-    const index = await VectorStoreIndex.fromDocuments(documents);
-    await index.storageContext.persist(CACHE_DIR);
+    const storageContext = await storageContextFromDefaults({ persistDir: CACHE_DIR });
+    const index = await VectorStoreIndex.fromDocuments(documents, { storageContext });
     queryEngine = index.asQueryEngine({ similarityTopK: 6 });
 
     ready = true;
