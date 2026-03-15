@@ -46,12 +46,10 @@ export function subscribeToProgress(
                 es.close();
             }
         } catch {
-            // ignore parse errors
         }
     };
 
     es.onerror = () => {
-        // SSE will auto-reconnect — that's fine
     };
 
     return () => es.close();
